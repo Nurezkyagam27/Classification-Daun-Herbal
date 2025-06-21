@@ -98,30 +98,32 @@ if uploaded_file is not None and model is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Gambar Daun yang Diunggah", use_column_width=True)
 
+    # Tentukan batas ambang keyakinan yang Anda inginkan (dalam persen)
+    CONFIDENCE_THRESHOLD = 95.0 # Anda bisa coba angka lain, misal 90.0 atau 98.0
+
     with st.spinner("Menganalisis gambar..."):
-        # Panggil fungsi untuk prediksi
         predicted_class, confidence = preprocess_and_predict(model, image)
         manfaat = khasiat_daun.get(predicted_class, "Khasiat tidak ditemukan.")
 
     st.markdown("---")
-    # Tampilkan hasil dengan tambahan skor keyakinan
-    st.markdown(
-        f"<p style='text-align:center; font-size:24px; color:#0abf53;'>"
-        f"<strong>{predicted_class}</strong></p>",
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        f"<p style='text-align:center; font-size:16px;'>"
-        f"Tingkat Keyakinan: <strong>{confidence:.2f}%</strong></p>",
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        f"<p style='text-align:center; font-size:18px; color:#444; border-left: 4px solid #0abf53; padding-left: 10px;'>"
-        f"<strong>Khasiat:</strong> {manfaat}</p>",
-        unsafe_allow_html=True
-    )
-elif model is None:
-    st.error("Gagal memuat model. Mohon periksa file model dan coba lagi.")
+
+    # CEK APAKAH KEYAKINAN MELEWATI BATAS AMBANG
+    if confidence >= CONFIDENCE_THRESHOLD:
+        # Jika yakin, tampilkan hasil seperti biasa
+        st.success(f"**Hasil Prediksi:** {predicted_class}")
+        st.metric(label="Tingkat Keyakinan", value=f"{confidence:.2f}%")
+        st.markdown(
+            f"<p style='text-align:center; font-size:18px; color:#444; border-left: 4px solid #0abf53; padding-left: 10px;'>"
+            f"<strong>Khasiat:</strong> {manfaat}</p>",
+            unsafe_allow_html=True
+        )
+    else:
+        # Jika tidak yakin, tampilkan pesan peringatan
+        st.warning(f"**Maaf, jenis daun tidak dapat dikenali dengan pasti.**")
+        st.info(
+            f"Model menduga ini adalah '{predicted_class}', namun dengan tingkat keyakinan yang rendah ({confidence:.2f}%). "
+            f"Silakan coba gambar yang lebih jelas atau dari sudut yang berbeda."
+        )
 
 
 # Footer Icons (dari kode Anda)
